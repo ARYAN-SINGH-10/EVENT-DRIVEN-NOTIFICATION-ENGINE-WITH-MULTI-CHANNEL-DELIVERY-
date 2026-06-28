@@ -1,89 +1,355 @@
-# Event-Driven Notification Engine
+﻿# 🚀 Event-Driven Notification Engine with Multi-Channel Delivery
 
-An enterprise-grade, highly scalable, asynchronous microservice designed to ingest domain events and route them to users through optimal communication channels. Built for high resiliency, the engine features strict compliance controls, frequency capping, quiet hour queueing, and a robust Dead Letter Queue (DLQ).
+![Java](https://img.shields.io/badge/Java-21-007396?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-8+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-Latest-231F20?style=for-the-badge&logo=apachekafka&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-OpenAPI%203-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![Build](https://img.shields.io/badge/Build-SUCCESS-brightgreen?style=for-the-badge)
+![Tests](https://img.shields.io/badge/Tests-60%20Passing-brightgreen?style=for-the-badge)
 
-## Features
-- **Multi-Channel Delivery:** Pluggable processors for SMS, Email, Push, WhatsApp, Slack, In-App, Webhooks, and Voice.
-- **Intelligent Routing:** Cost-optimized and fallback-aware channel selection.
-- **Resiliency & Retries:** Exponential backoff and maximum retry tracking with DLQ routing for poison messages.
-- **Compliance Engine:** Strict TRAI DND (Do Not Disturb) promotional checks based on event taxonomy.
-- **Frequency Capping:** Velocity limits on a global, channel, or taxonomy level (critical events bypass limits).
-- **Quiet Hours:** Timezone-aware queueing to prevent notifications during user sleep windows.
-- **Deep Analytics & Dashboard:** Asynchronous metric aggregation (Delivery Rate, CTR, Cost-Per-Notification).
-- **Full Traceability:** Robust State Machine mapping every payload transition to an immutable Audit Log.
+---
 
-## Financial Event Taxonomy
-All ingested events are strictly mapped to the `FinancialEventType` taxonomy to enforce compliance:
-- **TXNX-001 (Transactional)**: E.g., Payment success, OTP. (Bypasses DND).
-- **PROMO-001 (Promotional)**: E.g., Loan offers. (Blocked by DND, respects Quiet Hours).
-- **CRIT-001 (Critical/Fraud)**: E.g., Account takeover. (Bypasses all caps, quiet hours, and DND).
+## 📖 Overview
 
-## Tech Stack
-- **Framework:** Java 21 / Spring Boot 3.3.5
-- **Persistence:** Spring Data JPA / Hibernate (PostgreSQL recommended)
-- **Messaging:** Apache Kafka (configurable internal simulation mode)
-- **Documentation:** Springdoc OpenAPI / Swagger UI
-- **Testing:** JUnit 5, Mockito, Maven Surefire
+The **Event-Driven Notification Engine** is a production-grade backend platform built using **Spring Boot 3** and **PostgreSQL** that acts as an intelligent middleware between domain event producers and end-user communication channels.
 
-## Project Structure
-```text
-src/main/java/com/notificationengine/
- ├── analytics/    # Aggregation and metric rollup schedulers
- ├── channel/      # Interfaces and channel-specific processors
- ├── controller/   # REST APIs (Events, Preferences, DLQ, Analytics, Dashboard)
- ├── dlq/          # Dead Letter Queue handling
- ├── dto/          # Data Transfer Objects
- ├── entity/       # JPA Entities
- ├── event/        # Ingestion pipeline, Kafka producers/listeners
- ├── preference/   # User preference resolution
- ├── repository/   # JPA Repositories
- ├── service/      # Core business logic (State Machine, Routing, Compliance)
- ├── taxonomy/     # Financial Event enums
- └── template/     # Template rendering engine
+The system provides:
+
+- 📡 Multi-channel notification delivery (SMS, Email, Push, WhatsApp, Slack, In-App, Voice, Webhooks)
+- 🧠 Intelligent cost-optimized channel routing with fallback awareness
+- ⚡ Apache Kafka-based asynchronous event streaming (with simulated mode)
+- 🛡️ Compliance engine with TRAI DND enforcement
+- ⏰ Frequency capping & quiet-hour queueing
+- 💀 Dead Letter Queue (DLQ) with configurable retry backoff
+- 🔄 Full state machine with immutable audit logging
+- 📊 Async analytics & operational dashboard
+- 📚 OpenAPI / Swagger UI documentation
+
+The platform is designed to reliably deliver the **right notification**, through the **right channel**, at the **right time** — while strictly obeying compliance boundaries.
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+Domain Event Producers (REST / Kafka)
+              │
+              ▼
+   Event Ingestion Pipeline
+              │
+     ┌────────┼────────┐
+     ▼        ▼        ▼
+Compliance  Frequency  Quiet Hour
+  Engine    Capper     Queue
+     └────────┼────────┘
+              ▼
+   Intelligent Channel Router
+              │
+  ┌─────┬────┼────┬──────┬──────┐
+  ▼     ▼    ▼    ▼      ▼      ▼
+ SMS  Email Push WhatsApp Slack  Voice
+              │
+  ┌───────────┼───────────┐
+  ▼           ▼           ▼
+PostgreSQL  Kafka DLQ  Audit Log
 ```
 
-## Running Locally
+---
 
-### Prerequisites
-- JDK 21
-- Maven 3.9+
-- *(Optional)* Kafka and Zookeeper (for non-simulated mode)
+## ✨ Key Features
 
-### Configuration
-By default, the application runs on an H2 in-memory database and uses a Simulated Event Bus instead of Kafka.
-You can configure a persistent Database (PostgreSQL) and Kafka in `src/main/resources/application.properties`:
+### 📡 Multi-Channel Delivery
+
+Pluggable channel processors supporting:
+
+- **SMS** — Transactional & OTP delivery
+- **Email** — Rich templated messaging
+- **Push Notifications** — Mobile & web push
+- **WhatsApp** — Conversational alerts
+- **Slack** — Internal ops notifications
+- **In-App** — Real-time embedded alerts
+- **Voice** — Critical outbound calls
+- **Webhooks** — Event forwarding to external systems
+
+### 🧠 Intelligent Channel Router
+
+- Cost-optimized channel selection
+- Fallback-aware routing (primary → secondary → tertiary)
+- Per-user preference resolution
+- Event taxonomy-aware routing rules
+
+### 🚦 Financial Event Taxonomy & Compliance
+
+All events are strictly classified under the `FinancialEventType` taxonomy:
+
+| Code | Category | DND | Quiet Hours | Frequency Cap |
+|------|----------|-----|-------------|---------------|
+| `TXNX-001` | Transactional (OTP, Payment) | Bypasses | Respects | Respects |
+| `PROMO-001` | Promotional (Loan Offers) | Blocked | Blocked | Blocked |
+| `CRIT-001` | Critical / Fraud Alerts | Bypasses | Bypasses | Bypasses |
+
+### ⚡ Apache Kafka Event Streaming
+
+- Kafka producer/consumer pipeline with topic-based routing
+- **Simulation mode** available — no Kafka installation required for local dev
+- Dead Letter Topic (DLT) for failed message routing
+
+### 💀 Dead Letter Queue (DLQ)
+
+Failed notification events are:
+
+- Queued with exponential backoff retries
+- Moved to DLQ after retry exhaustion
+- Replayable through dedicated APIs
+
+### ⏰ Quiet Hours & Frequency Capping
+
+- **Quiet Hours**: Timezone-aware message queueing during user sleep windows
+- **Frequency Capping**: Velocity limits at global, channel, and taxonomy level
+- **Critical events** bypass all limits automatically
+
+### 🔄 Notification State Machine
+
+Supported states:
+
+```
+CREATED → COMPLIANCE_CHECK → SCHEDULED / BLOCKED
+SCHEDULED → DISPATCHED → DELIVERED / FAILED
+FAILED → RETRYING → DLQ
+```
+
+Features:
+- Strict transition validation
+- Immutable audit log for every state change
+- Full lifecycle traceability
+
+### 📊 Analytics & Dashboard
+
+Asynchronous metric aggregation APIs for:
+
+- Delivery Rate & Click-Through Rate (CTR)
+- Cost-Per-Notification analytics
+- Channel health monitoring
+- DLQ backlog reporting
+
+---
+
+## 📚 Swagger / OpenAPI & Accessing the App
+
+> **Note:** This is a pure backend API — there is no HTML frontend at the root URL (`/`). Visiting `/` will return a standard **Whitelabel Error Page (404)** — this is expected!
+
+To interact with the application, access the **Swagger UI**:
+
+### 🖥️ Local Environment
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+### 🌐 Production Environment (e.g., Render / Railway)
+```
+https://your-app-name.onrender.com/swagger-ui/index.html
+```
+
+### 📄 Raw OpenAPI JSON
+```
+http://localhost:8080/v3/api-docs
+```
+
+---
+
+## 🛠️ Technology Stack
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Java | 21 | Core language |
+| Spring Boot | 3.3.5 | Application framework |
+| Maven | 3.9+ | Build tool |
+| PostgreSQL | 8+ | Primary persistence |
+| Apache Kafka | Latest | Async event streaming |
+| Spring Data JPA / Hibernate | Latest | ORM & data access |
+| Caffeine Cache | Latest | In-memory caching |
+| Lombok | 1.18.34 | Boilerplate reduction |
+| Springdoc OpenAPI | 2.6.0 | Swagger UI |
+| JUnit 5 / Mockito | Latest | Testing |
+| Docker | Latest | Containerization |
+
+---
+
+## 📂 Project Structure
+
+```
+event-driven-notification-engine
+│
+├── src
+│   ├── main
+│   │   ├── java/com/notificationengine
+│   │   │   ├── analytics/        # Metric aggregation & rollup schedulers
+│   │   │   ├── channel/          # Channel interfaces & processors
+│   │   │   ├── compliance/       # DND & TRAI compliance checks
+│   │   │   ├── config/           # Spring configs (Kafka, Cache, etc.)
+│   │   │   ├── controller/       # REST APIs
+│   │   │   ├── dlq/              # Dead Letter Queue logic
+│   │   │   ├── dto/              # Data Transfer Objects
+│   │   │   ├── entity/           # JPA Entities
+│   │   │   ├── event/            # Ingestion pipeline, Kafka producers/consumers
+│   │   │   ├── exception/        # Global exception handling
+│   │   │   ├── personalization/  # Financial calculators & personalization
+│   │   │   ├── preference/       # User preference resolution
+│   │   │   ├── provider/         # Notification provider integrations
+│   │   │   ├── repository/       # JPA Repositories
+│   │   │   ├── scheduler/        # Scheduled jobs
+│   │   │   ├── service/          # Core business logic & state machine
+│   │   │   ├── taxonomy/         # Financial event enums
+│   │   │   ├── template/         # Template rendering engine
+│   │   │   └── util/             # Utility helpers
+│   │
+│   └── resources
+│       └── application.properties
+│
+├── src/test/java
+├── pom.xml
+├── Dockerfile
+├── README.md
+├── Architecture.md
+├── DatabaseSchema.md
+├── API_Documentation.md
+└── TestingGuide.md
+```
+
+---
+
+## 🗄️ Database Setup
+
+Create the PostgreSQL database:
+
+```sql
+CREATE DATABASE notification_db;
+```
+
+Update `src/main/resources/application.properties`:
+
 ```properties
-app.kafka.simulation-mode=true # Set to false to use real Kafka topics
 spring.datasource.url=jdbc:postgresql://localhost:5432/notification_db
+spring.datasource.username=your_username
+spring.datasource.password=your_password
 ```
 
-### Build & Run
+> **Tip:** For quick local development, the app defaults to an **H2 in-memory database** — no setup needed!
+
+---
+
+## ▶️ Running the Application
+
+### Build
+
 ```bash
 mvn clean install
+```
+
+### Run
+
+```bash
 mvn spring-boot:run
 ```
 
-## API Documentation & Swagger URL
-When the application is running, full interactive OpenAPI documentation is available at:
-👉 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
+Application runs at:
 
-*(Detailed offline documentation is available in `API_Documentation.md`)*
-
-## Testing & Build Results
-The project contains 60 comprehensive unit and integration tests covering standard pathways and edge-case failure scenarios.
-```bash
-mvn clean test
-mvn surefire-report:report
 ```
-*Current Status: 100% BUILD SUCCESS. View the generated report at `target/site/surefire-report.html`.*
+http://localhost:8080
+```
 
-## Architecture Reference
-See the `Architecture.md` file for deep-dives into the pipeline, State Machine, Kafka flows, and Data schemas (`DatabaseSchema.md`).
+### Run with Docker
 
-## Future Enhancements
-- **Redis Integration:** Offload Frequency Capping state and Template Caching to Redis for multi-instance scaling.
-- **GraphQL API:** Implement a GraphQL layer for the Dashboard for selective metric fetching.
-- **Provider Webhooks:** Expose callback endpoints for Twilio/SendGrid to update delivery states asynchronously.
+```bash
+docker build -t notification-engine .
+docker run -p 8080:8080 notification-engine
+```
 
 ---
-**Author:** Antigravity AI
+
+## 🔍 API Highlights
+
+### Events
+```
+POST   /api/v1/events           # Ingest a domain event
+GET    /api/v1/events/{id}      # Get event status
+```
+
+### Notifications
+```
+GET    /api/v1/notifications/{id}          # Get notification details
+POST   /api/v1/notifications/{id}/retry    # Retry a failed notification
+```
+
+### Dead Letter Queue
+```
+GET    /api/v1/dlq              # List DLQ entries
+POST   /api/v1/dlq/{id}/replay  # Replay a DLQ message
+```
+
+### Analytics & Dashboard
+```
+GET    /api/v1/dashboard        # Operational dashboard summary
+GET    /api/v1/analytics/stats  # Delivery & CTR statistics
+```
+
+### User Preferences
+```
+GET    /api/v1/preferences/{userId}    # Get user channel preferences
+PUT    /api/v1/preferences/{userId}    # Update preferences
+```
+
+---
+
+## 🧪 Testing
+
+Run all tests:
+
+```bash
+mvn clean test
+```
+
+Generate Surefire HTML report:
+
+```bash
+mvn surefire-report:report
+```
+
+Current status:
+
+```
+Tests Run : 60
+Failures  : 0
+Errors    : 0
+Build     : SUCCESS
+```
+
+*Report available at: `target/site/surefire-report.html`*
+
+---
+
+## 📑 Additional Documentation
+
+- [Architecture.md](./Architecture.md) — Deep-dive into pipeline, Kafka flows & state machine
+- [DatabaseSchema.md](./DatabaseSchema.md) — Full entity-relationship diagram and schema
+- [API_Documentation.md](./API_Documentation.md) — Offline API reference
+- [TestingGuide.md](./TestingGuide.md) — Testing strategy and scenarios
+
+---
+
+## 🚀 Future Improvements
+
+- Redis-based distributed frequency capping for multi-instance scaling
+- GraphQL API layer for the analytics dashboard
+- Provider webhooks for Twilio/SendGrid async delivery updates
+- OpenTelemetry distributed tracing
+- Kubernetes deployment manifests
+- ML-driven channel selection optimization
+
+---
+
+## 💻 Author
+
+**Aryan Singh**
