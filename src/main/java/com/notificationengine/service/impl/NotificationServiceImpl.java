@@ -259,7 +259,6 @@ public class NotificationServiceImpl implements NotificationService {
     // Internal delivery
     // -----------------------------------------------------------------------
 
-    @Async("notificationTaskExecutor")
     protected void dispatch(NotificationEntity notification) {
         try {
             notification = stateMachineService.transitionState(notification, NotificationStatus.PROCESSING, "Dispatching");

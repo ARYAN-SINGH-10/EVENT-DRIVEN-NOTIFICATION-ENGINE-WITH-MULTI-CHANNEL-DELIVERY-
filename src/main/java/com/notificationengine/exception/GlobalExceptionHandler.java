@@ -3,6 +3,7 @@ package com.notificationengine.exception;
 import com.notificationengine.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -124,6 +125,16 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST.getCode(),
                 ex.getMessage(), request.getRequestURI());
 
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropertyReference(
+            PropertyReferenceException ex, HttpServletRequest request) {
+        ErrorResponse response = buildError(
+                HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST.getCode(),
+                "Invalid sort parameter: '" + ex.getPropertyName() + "'. Use a valid field name like 'createdAt'.",
+                request.getRequestURI());
         return ResponseEntity.badRequest().body(response);
     }
 
