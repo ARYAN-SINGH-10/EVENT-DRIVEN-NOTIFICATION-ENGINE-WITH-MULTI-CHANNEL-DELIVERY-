@@ -19,7 +19,7 @@ services:
         value: 8080
 
   # -------------------------------------------------------------
-  # 2. React Vite Frontend (Static Site)
+  # 2. React Vite Frontend (Static Site - Global CDN)
   # -------------------------------------------------------------
   - type: web
     name: notification-engine-frontend
@@ -28,7 +28,6 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     plan: free
-    region: oregon
     routes:
       - type: rewrite
         source: /*
@@ -38,4 +37,4 @@ services:
         fromService:
           type: web
           name: notification-engine-backend
-          property: url
+          property: host

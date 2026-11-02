@@ -240,7 +240,10 @@ const store = new StateStore();
 
 // Try detecting backend connectivity
 let isBackendLive = false;
-const envBase = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const rawEnv = (import.meta.env.VITE_API_URL || '').trim();
+const envBase = rawEnv
+  ? (rawEnv.startsWith('http://') || rawEnv.startsWith('https://') ? rawEnv.replace(/\/$/, '') : `https://${rawEnv.replace(/\/$/, '')}`)
+  : '';
 let apiPrefix = envBase ? `${envBase}/api/v1` : '/api/v1';
 
 export async function detectBackend() {
