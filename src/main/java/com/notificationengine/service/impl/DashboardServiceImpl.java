@@ -24,6 +24,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final AnalyticsService analyticsService;
     private final DlqService dlqService;
     private final UserPreferenceRepository userPreferenceRepository;
+    private final com.notificationengine.repository.NotificationRepository notificationRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -42,20 +43,33 @@ public class DashboardServiceImpl implements DashboardService {
         long totalPrefs = optIns + optOuts;
         double globalOptOutRate = totalPrefs > 0 ? (double) optOuts / totalPrefs : 0.0;
 
-        // Map Channel Metrics (Total Delivered per channel, assuming we track cost/cap hits in analytics summary, 
-        // we might not have total sent by channel directly in the summary DTO, but we can return cost or cap hits.
-        // Actually, let's use the capHitsByChannel as a proxy for channel metrics or we can just fetch total sent per channel
-        // Since we didn't add totalSentByChannel to AnalyticsSummaryResponse, let's just return capHitsByChannel in channelMetrics
-        // or a placeholder for now. To be precise, we can query it, but let's just return what we have.
+        // Data Integrity Harmonization:
+        // If analytics rollup has not run yet (e.g. fresh DB or active day),
+        // pull live metrics directly from notification repository to avoid 0 count mismatch
+        long totalSent = analyticsSummary.getTotalSent();
+        double deliveryRate = analyticsSummary.getDeliveryRate();
+        long totalFailed = analyticsSummary.getTotalFailed();
+
+        if (totalSent == 0) {
+            long liveCount = notificationRepository.count();
+            if (liveCount > 0) {
+                totalSent = liveCount;
+                long delivered = notificationRepository.countByStatus(com.notificationengine.entity.NotificationEntity.NotificationStatus.DELIVERED);
+                long failed = notificationRepository.countByStatus(com.notificationengine.entity.NotificationEntity.NotificationStatus.FAILED);
+                totalFailed = failed;
+                deliveryRate = totalSent > 0 ? ((double) delivered / totalSent) * 100.0 : 0.0;
+            }
+        }
+
         Map<String, Double> channelMetrics = new HashMap<>();
         if (analyticsSummary.getCostByChannel() != null) {
             channelMetrics.putAll(analyticsSummary.getCostByChannel());
         }
 
         return DashboardResponse.builder()
-                .totalNotifications(analyticsSummary.getTotalSent())
+                .totalNotifications(totalSent)
                 .deliveryMetrics(DashboardResponse.DeliveryMetrics.builder()
-                        .deliveryRate(analyticsSummary.getDeliveryRate())
+                        .deliveryRate(deliveryRate)
                         .readRate(analyticsSummary.getReadRate())
                         .clickThroughRate(analyticsSummary.getClickThroughRate())
                         .avgDeliveryTimeMs(analyticsSummary.getAvgDeliveryTimeMs() != null ? analyticsSummary.getAvgDeliveryTimeMs() : 0.0)
@@ -63,7 +77,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .channelMetrics(channelMetrics)
                 .failureMetrics(DashboardResponse.FailureMetrics.builder()
                         .failureRate(analyticsSummary.getFailureRate())
-                        .totalFailed(analyticsSummary.getTotalFailed())
+                        .totalFailed(totalFailed)
                         .totalCapHits(analyticsSummary.getTotalCapHits())
                         .build())
                 .dlqSummary(dlqStats)

@@ -59,8 +59,8 @@ public class NotificationEngineApplication {
         var context = app.run(args);
         log.info("========================================================");
         log.info("  Event-Driven Notification Engine started successfully  ");
-        log.info("  Swagger UI : http://localhost:8080/api/swagger-ui.html ");
-        log.info("  API Docs   : http://localhost:8080/api/v3/api-docs      ");
+        log.info("  Swagger UI : http://localhost:8080/swagger-ui.html     ");
+        log.info("  API Docs   : http://localhost:8080/v3/api-docs         ");
         log.info("========================================================");
     }
 }

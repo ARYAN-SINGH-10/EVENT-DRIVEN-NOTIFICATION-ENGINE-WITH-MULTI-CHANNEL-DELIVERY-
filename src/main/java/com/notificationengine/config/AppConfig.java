@@ -62,13 +62,20 @@ public class AppConfig implements WebMvcConfigurer {
     // CORS
     // -----------------------------------------------------------------------
 
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080}")
+    private String allowedCorsOrigins;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        String[] origins = java.util.Arrays.stream(allowedCorsOrigins.split(","))
+                .map(String::trim)
+                .toArray(String[]::new);
+
         registry.addMapping("/**")
-                .allowedOriginPatterns("*")
+                .allowedOriginPatterns(origins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .exposedHeaders("X-Total-Count", "X-Page-Number", "X-Page-Size")
+                .exposedHeaders("X-Total-Count", "X-Page-Number", "X-Page-Size", "X-Correlation-ID")
                 .allowCredentials(false)
                 .maxAge(3600);
     }

@@ -41,7 +41,7 @@ public class NotificationEvent {
     @Column(name = "source", length = 100)
     private String source;
 
-    @Column(name = "correlation_id", length = 100)
+    @Column(name = "correlation_id", length = 100, unique = true)
     private String correlationId;
 
     @Column(name = "payload", columnDefinition = "TEXT")

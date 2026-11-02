@@ -25,7 +25,8 @@ public class DndComplianceEngineImpl implements DndComplianceEngine {
     @Override
     @Transactional
     public boolean validateCompliance(String userId, String phoneNumber, ChannelType channel, FinancialEventType taxonomy) {
-        log.debug("[COMPLIANCE-ENGINE] Validating compliance for user={} phone={} channel={} event={}", userId, phoneNumber, channel, taxonomy);
+        log.debug("[COMPLIANCE-ENGINE] Validating compliance for user={} recipient={} channel={} event={}",
+                userId, com.notificationengine.util.NotificationUtil.maskRecipient(phoneNumber, channel), channel, taxonomy);
 
         boolean isPromotional = taxonomy.name().startsWith("MKTG") || taxonomy.name().startsWith("PROMO");
         String category = "BANKING"; // In a real app, derive this from taxonomy.getCategory()
@@ -69,8 +70,8 @@ public class DndComplianceEngineImpl implements DndComplianceEngine {
     }
 
     private void logAudit(String userId, String phone, ChannelType channel, String eventType, ComplianceAction action, String reason) {
-        log.info("[COMPLIANCE-ENGINE] Action={} | User={} | Phone={} | Channel={} | Event={} | Reason='{}'",
-                action, userId, phone, channel, eventType, reason);
+        log.info("[COMPLIANCE-ENGINE] Action={} | User={} | Recipient={} | Channel={} | Event={} | Reason='{}'",
+                action, userId, com.notificationengine.util.NotificationUtil.maskRecipient(phone, channel), channel, eventType, reason);
 
         DndAuditLog audit = DndAuditLog.builder()
                 .userId(userId)

@@ -26,6 +26,8 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 
     Page<NotificationEntity> findByStatus(NotificationStatus status, Pageable pageable);
 
+    long countByStatus(NotificationStatus status);
+
     Page<NotificationEntity> findByChannelType(ChannelType channelType, Pageable pageable);
 
     Page<NotificationEntity> findByUserIdAndStatus(String userId, NotificationStatus status, Pageable pageable);

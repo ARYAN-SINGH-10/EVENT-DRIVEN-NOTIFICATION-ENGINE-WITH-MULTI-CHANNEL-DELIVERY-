@@ -60,6 +60,13 @@ public class DlqServiceImpl implements DlqService {
 
     @Override
     @Transactional(readOnly = true)
+    public PagedResponse<DlqResponse> getAll(Pageable pageable) {
+        Page<DlqResponse> page = dlqRepository.findAll(pageable).map(this::toResponse);
+        return PagedResponse.from(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PagedResponse<DlqResponse> getByStatus(DlqStatus status, Pageable pageable) {
         Page<DlqResponse> page = dlqRepository.findByStatus(status, pageable).map(this::toResponse);
         return PagedResponse.from(page);

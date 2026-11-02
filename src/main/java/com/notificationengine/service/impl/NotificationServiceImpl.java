@@ -150,6 +150,15 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
+    public PagedResponse<NotificationResponse> getAll(Pageable pageable) {
+        Page<NotificationResponse> page = notificationRepository
+                .findAll(pageable)
+                .map(this::toResponse);
+        return PagedResponse.from(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PagedResponse<NotificationResponse> getByUserId(String userId, Pageable pageable) {
         Page<NotificationResponse> page = notificationRepository
                 .findByUserId(userId, pageable)

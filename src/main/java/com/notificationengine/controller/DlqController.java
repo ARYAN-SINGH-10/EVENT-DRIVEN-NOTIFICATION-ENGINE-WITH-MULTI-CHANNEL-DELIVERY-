@@ -30,6 +30,17 @@ public class DlqController {
     // Queries
     // -------------------------------------------------------------------------
 
+    @GetMapping
+    @Operation(summary = "List all DLQ entries", description = "Retrieves a paginated list of DLQ entries with optional status filtering.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "List of DLQ entries")
+    public ResponseEntity<PagedResponse<DlqResponse>> getAll(
+            @RequestParam(required = false) DlqStatus status, Pageable pageable) {
+        if (status != null) {
+            return ResponseEntity.ok(dlqService.getByStatus(status, pageable));
+        }
+        return ResponseEntity.ok(dlqService.getAll(pageable));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get a DLQ entry by its ID", description = "Retrieves the full details of a specific dead letter queue entry by its UUID.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "DLQ entry found")

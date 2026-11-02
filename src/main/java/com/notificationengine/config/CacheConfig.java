@@ -21,9 +21,7 @@ public class CacheConfig implements CachingConfigurer {
     @Bean
     @Override
     public CacheManager cacheManager() {
-        CaffeineCacheManager manager = new CaffeineCacheManager(
-                "templates", "preferences", "channels", "analytics"
-        );
+        CaffeineCacheManager manager = new CaffeineCacheManager();
         manager.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(10, TimeUnit.MINUTES));

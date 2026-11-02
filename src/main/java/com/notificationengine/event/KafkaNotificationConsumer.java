@@ -54,7 +54,8 @@ public class KafkaNotificationConsumer {
             log.debug("[KAFKA-CONSUMER] Message processed and acknowledged successfully");
         } catch (Exception e) {
             log.error("[KAFKA-CONSUMER] Failed to process message: {}", e.getMessage(), e);
-            // Do not ack — let Kafka retry template handle it
+            // Re-throw so DefaultErrorHandler and DeadLetterPublishingRecoverer handle retry and DLQ routing
+            throw new RuntimeException("Kafka event processing failed: " + e.getMessage(), e);
         }
     }
 }

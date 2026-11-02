@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -109,6 +110,25 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST.getCode(), message, request.getRequestURI());
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    // -----------------------------------------------------------------------
+    // 404 — No Resource Found (e.g. unknown URL, missing static file)
+    // -----------------------------------------------------------------------
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(
+            NoResourceFoundException ex, HttpServletRequest request) {
+
+        log.debug("Resource not found: path={}", request.getRequestURI());
+
+        ErrorResponse response = buildError(
+                HttpStatus.NOT_FOUND,
+                ErrorCode.RESOURCE_NOT_FOUND.getCode(),
+                "The requested resource was not found: " + request.getRequestURI(),
+                request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     // -----------------------------------------------------------------------

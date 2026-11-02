@@ -14,6 +14,8 @@ import java.util.UUID;
  */
 public interface DlqService {
 
+    PagedResponse<DlqResponse> getAll(Pageable pageable);
+
     PagedResponse<DlqResponse> getByStatus(DlqStatus status, Pageable pageable);
 
     DlqResponse getById(UUID id);

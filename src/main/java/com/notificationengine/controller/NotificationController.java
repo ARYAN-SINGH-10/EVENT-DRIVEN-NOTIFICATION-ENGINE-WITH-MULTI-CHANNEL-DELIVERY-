@@ -33,6 +33,26 @@ public class NotificationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(notificationService.send(request));
     }
 
+    @GetMapping
+    @Operation(summary = "Get all notifications", description = "Retrieves a paginated list of notifications with optional status, channel, and userId filters.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "List of notifications retrieved successfully")
+    public ResponseEntity<PagedResponse<NotificationResponse>> getAll(
+            @RequestParam(required = false) NotificationStatus status,
+            @RequestParam(required = false) ChannelType channel,
+            @RequestParam(required = false) String userId,
+            Pageable pageable) {
+        if (userId != null && !userId.isBlank()) {
+            return ResponseEntity.ok(notificationService.getByUserId(userId, pageable));
+        }
+        if (status != null) {
+            return ResponseEntity.ok(notificationService.getByStatus(status, pageable));
+        }
+        if (channel != null) {
+            return ResponseEntity.ok(notificationService.getByChannelType(channel, pageable));
+        }
+        return ResponseEntity.ok(notificationService.getAll(pageable));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get a notification by ID", description = "Fetches the full details of a specific notification by its UUID.")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Notification found")

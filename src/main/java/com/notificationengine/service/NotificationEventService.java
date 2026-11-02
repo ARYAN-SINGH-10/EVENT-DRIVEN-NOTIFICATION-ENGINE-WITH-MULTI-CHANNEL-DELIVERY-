@@ -35,4 +35,11 @@ public interface NotificationEventService {
      * @param eventId the database ID of the event being processed (optional)
      */
     void processEvent(EventPayload payload, UUID eventId);
+
+    /**
+     * Recovers in-flight unprocessed events across application restarts.
+     *
+     * @return the number of events recovered
+     */
+    int recoverUnprocessedEvents();
 }

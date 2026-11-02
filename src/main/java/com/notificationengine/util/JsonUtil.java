@@ -71,4 +71,8 @@ public final class JsonUtil {
             return Optional.empty();
         }
     }
+
+    public static ObjectMapper getObjectMapper() {
+        return MAPPER;
+    }
 }

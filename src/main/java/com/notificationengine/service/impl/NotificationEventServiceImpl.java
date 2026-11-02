@@ -28,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,9 +69,17 @@ public class NotificationEventServiceImpl implements NotificationEventService {
         // 1. Validation
         validateEvent(payload);
 
-        // Generate correlation ID if not present
+        // Generate correlation ID if not present, or check idempotency if provided
         if (payload.getCorrelationId() == null || payload.getCorrelationId().isBlank()) {
             payload.setCorrelationId(UuidUtil.generateCorrelationId());
+        } else {
+            // Idempotency: Return existing event if duplicate correlationId is received
+            Optional<NotificationEvent> existing = eventRepository.findByCorrelationId(payload.getCorrelationId());
+            if (existing.isPresent()) {
+                log.info("[INGESTION] Idempotency match: Duplicate event detected for correlationId={}. Returning existing event id={}.",
+                        payload.getCorrelationId(), existing.get().getId());
+                return existing.get();
+            }
         }
 
         // 2. Persist event payload with processed = false
@@ -83,7 +93,15 @@ public class NotificationEventServiceImpl implements NotificationEventService {
                 .processed(false)
                 .build();
 
-        NotificationEvent saved = eventRepository.save(event);
+        NotificationEvent saved;
+        try {
+            saved = eventRepository.save(event);
+        } catch (org.springframework.dao.DataIntegrityViolationException dive) {
+            log.warn("[INGESTION] Concurrent duplicate correlationId={} detected on atomic save. Returning existing event.",
+                    payload.getCorrelationId());
+            return eventRepository.findByCorrelationId(payload.getCorrelationId())
+                    .orElseThrow(() -> dive);
+        }
         log.info("[INGESTION] Event ingested successfully: id={}, type={}, correlationId={}",
                 saved.getId(), saved.getEventType(), saved.getCorrelationId());
 
@@ -91,6 +109,34 @@ public class NotificationEventServiceImpl implements NotificationEventService {
         publishEventAsync(saved.getId());
 
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public int recoverUnprocessedEvents() {
+        List<NotificationEvent> unprocessed = eventRepository.findByProcessedFalseOrderByCreatedAtAsc();
+        if (unprocessed == null || unprocessed.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        LocalDateTime threshold = LocalDateTime.now().minusSeconds(15);
+        for (NotificationEvent event : unprocessed) {
+            if (event.getCreatedAt() != null && event.getCreatedAt().isBefore(threshold)) {
+                log.warn("[INGESTION-RECOVERY] Resuming unprocessed event from prior run: id={}, type={}, correlationId={}",
+                        event.getId(), event.getEventType(), event.getCorrelationId());
+                publishEventAsync(event.getId());
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        int recovered = recoverUnprocessedEvents();
+        if (recovered > 0) {
+            log.info("[INGESTION-RECOVERY] Successfully resumed {} unprocessed events on application startup.", recovered);
+        }
     }
 
     @Override
@@ -172,8 +218,8 @@ public class NotificationEventServiceImpl implements NotificationEventService {
                 // DND and Compliance Validation
                 boolean isCompliant = dndComplianceEngine.validateCompliance(payload.getUserId(), recipientAddress, channel, taxonomy);
                 if (!isCompliant) {
-                    log.warn("[INGESTION-PROCESS] Notification blocked by DND Compliance Engine: channel={}, user={}, address={}",
-                            channel, payload.getUserId(), recipientAddress);
+                    log.warn("[INGESTION-PROCESS] Notification blocked by DND Compliance Engine: channel={}, user={}, recipient={}",
+                            channel, payload.getUserId(), com.notificationengine.util.NotificationUtil.maskRecipient(recipientAddress, channel));
                     stateMachineService.transitionState(entity, com.notificationengine.entity.NotificationEntity.NotificationStatus.DND, "Blocked by TRAI DND Compliance");
                     errorMessages.append("[").append(channel).append(": BLOCKED_BY_COMPLIANCE]");
                     continue; // Skip this channel

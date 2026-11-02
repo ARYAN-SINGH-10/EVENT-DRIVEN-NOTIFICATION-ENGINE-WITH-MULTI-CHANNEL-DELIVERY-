@@ -16,6 +16,8 @@ public interface NotificationService {
 
     NotificationResponse send(NotificationRequest request);
 
+    PagedResponse<NotificationResponse> getAll(Pageable pageable);
+
     NotificationResponse getById(UUID id);
 
     PagedResponse<NotificationResponse> getByUserId(String userId, Pageable pageable);
